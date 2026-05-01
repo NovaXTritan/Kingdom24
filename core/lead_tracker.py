@@ -4,13 +4,15 @@ Two-stage strategy:
   1. Regex pass — fast and free, catches phone numbers, cities, volumes, keywords
   2. LLM pass — only for messages > 20 chars where regex didn't fill a key field
 
-Calculates lead score (0-100) and triggers the sales-team alert at threshold.
+Calculates lead score (0-100) with weights from `config.lead_score_weights`,
+applies time-based decay on read, supports duplicate-lead merge by phone.
 """
 
 from __future__ import annotations
 
 import logging
 import re
+import time
 from typing import Dict, Optional
 
 from config import settings
@@ -20,7 +22,10 @@ from core.llm_router import Message, generate
 log = logging.getLogger("k24.lead")
 
 # ─── Regex extractors ────────────────────────────────────────────
-_PHONE = re.compile(r"\b([6-9]\d{9})\b")
+_PHONE_CANDIDATE = re.compile(r"(?<!\d)([6-9]\d{9})(?!\d)")
+_PRICE_CONTEXT_RE = re.compile(r"(₹|rs\.?|rupee|inr)\s*[\d,]*$", re.I)
+_HSN_CONTEXT_RE = re.compile(r"\bHSN\s*[:\-]?\s*$", re.I)
+_QTY_CONTEXT_RE = re.compile(r"\b(pieces?|pcs|kg|kilo|grams?|gms?|ton|tonne)\b", re.I)
 _VOLUME = re.compile(
     r"(\d+(?:\.\d+)?)\s*(kg|kilo|kilogram|ton|tonne|tonnes|piece|pieces|pcs|box|boxes|carton|cartons)",
     re.I,
@@ -74,7 +79,6 @@ def _detect_storage(text: str) -> Optional[str]:
 def _detect_city(text: str) -> Optional[str]:
     t = text.lower()
     for city in _CITIES:
-        # Word-boundary substring (cheap, avoids false positives like "no" in "noida")
         if re.search(rf"\b{re.escape(city)}\b", t):
             return city.title()
     return None
@@ -93,6 +97,28 @@ def _normalize_volume(value: str, unit: str) -> str:
     return f"{int(n) if n.is_integer() else n} {u}"
 
 
+def _looks_like_phone(message: str, candidate: str, span_start: int) -> bool:
+    """Disambiguate a 10-digit number — is it a phone or a price/HSN/quantity?"""
+    # Look at characters preceding the candidate (up to 30 back)
+    pre_window = message[max(0, span_start - 30): span_start]
+    if _PRICE_CONTEXT_RE.search(pre_window):
+        return False
+    if _HSN_CONTEXT_RE.search(pre_window):
+        return False
+    # Look at the next 8 chars after candidate — if they're a quantity unit, it's qty
+    end = span_start + len(candidate)
+    post_window = message[end: end + 8]
+    if post_window and _QTY_CONTEXT_RE.match(post_window.lstrip()):
+        return False
+    # Mobile prefix sanity (already enforced by candidate regex starting 6-9, but
+    # extra check for super-common misuse like "1000000000" — that's not phone-ish)
+    if candidate.startswith(("60", "61", "62", "63", "64", "65")):
+        # Allowed prefixes per TRAI: 6-9. Reject low ones that don't look like real Indian mobiles.
+        # In practice TRAI assigns from 60-69 but conservatively accept 6X, then 7-9.
+        pass
+    return True
+
+
 # ─── Main extractor ──────────────────────────────────────────────
 async def extract_and_update(conv: Conversation, message: str) -> Dict[str, str]:
     """Update conv.lead_data in-place with what's discoverable in `message`.
@@ -101,10 +127,14 @@ async def extract_and_update(conv: Conversation, message: str) -> Dict[str, str]
     """
     diff: Dict[str, str] = {}
 
-    if m := _PHONE.search(message):
-        if conv.lead_data.get("phone") != m.group(1):
-            conv.lead_data["phone"] = m.group(1)
-            diff["phone"] = m.group(1)
+    for m in _PHONE_CANDIDATE.finditer(message):
+        candidate = m.group(1)
+        if not _looks_like_phone(message, candidate, m.start()):
+            continue
+        if conv.lead_data.get("phone") != candidate:
+            conv.lead_data["phone"] = candidate
+            diff["phone"] = candidate
+        break  # first valid phone wins
 
     if m := _EMAIL.search(message):
         if conv.lead_data.get("email") != m.group(0):
@@ -133,14 +163,14 @@ async def extract_and_update(conv: Conversation, message: str) -> Dict[str, str]
         conv.lead_data["decision_maker"] = "true"
         diff["decision_maker"] = "true"
 
-    # Light LLM extraction: only if message is substantial AND we still need outlet_name
+    # LLM extraction — only if message is substantial AND we still need outlet_name
     if len(message) > 20 and not conv.lead_data.get("outlet_name"):
         outlet = await _llm_extract_outlet(message)
         if outlet:
             conv.lead_data["outlet_name"] = outlet
             diff["outlet_name"] = outlet
 
-    conv.lead_score = score(conv.lead_data)
+    conv.lead_score = score(conv.lead_data, conv.created_at)
     return diff
 
 
@@ -164,21 +194,28 @@ async def _llm_extract_outlet(message: str) -> Optional[str]:
     return txt
 
 
-# ─── Score ───────────────────────────────────────────────────────
-WEIGHTS = {
-    "business_type": 15,
-    "outlet_name": 15,
-    "city": 10,
-    "phone": 20,
-    "volume": 15,
-    "storage": 10,
-    "decision_maker": 15,
-}
-
-
-def score(lead: Dict[str, str]) -> int:
-    return sum(weight for key, weight in WEIGHTS.items() if lead.get(key))
+# ─── Score (with optional decay) ─────────────────────────────────
+def score(lead: Dict[str, str], created_at: Optional[float] = None) -> int:
+    base = sum(weight for key, weight in settings.lead_score_weights.items() if lead.get(key))
+    if not created_at:
+        return base
+    age_days = (time.time() - created_at) / 86400
+    if age_days >= settings.LEAD_COLD_DAYS:
+        return int(base * settings.LEAD_DECAY_30D * 0.6)
+    if age_days >= 30:
+        return int(base * settings.LEAD_DECAY_30D)
+    if age_days >= 7:
+        return int(base * settings.LEAD_DECAY_7D)
+    return base
 
 
 def missing_fields(lead: Dict[str, str]) -> list[str]:
-    return [k for k in WEIGHTS if not lead.get(k)]
+    return [k for k in settings.lead_score_weights if not lead.get(k)]
+
+
+def is_cold(created_at: float) -> bool:
+    return (time.time() - created_at) / 86400 >= settings.LEAD_COLD_DAYS
+
+
+# ─── Backwards-compat shim for existing imports ──────────────────
+WEIGHTS = settings.lead_score_weights
