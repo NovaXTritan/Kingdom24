@@ -159,14 +159,10 @@ def _price_within_tolerance(value: int, knowns: Set[int], tol: float = 0.05) -> 
 
 
 def _looks_like_total(value: int) -> bool:
-    """A 'total' looks like a multi-digit number — sums of qty × price.
-
-    We use a conservative heuristic: anything ≥ ₹500 and divisible by a
-    common quantity (1, 5, 10, 25, 30, 50, 100) by 1-rupee multiples is
-    likely a real total. We only *block* obvious fabrications (small
-    weird amounts that don't match anything).
-    """
-    return value >= 500
+    """Anything ≥ ₹50 is plausibly a calculated total or a reasonable line
+    item (₹50 sample fee, packaging, freight, etc.). Only flag values that
+    look like fabricated unit prices well below the catalog floor."""
+    return value >= 50
 
 
 def validate_response(text: str) -> OutputCheck:

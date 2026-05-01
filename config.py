@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     OLLAMA_BASE_URL: str = "http://localhost:11434"
 
     # ── LLM models ────────────────────────────────────────────
-    GEMINI_MODEL: str = "gemini-2.0-flash-exp"
+    GEMINI_MODEL: str = "gemini-2.5-flash"
     GROQ_MODEL_FAST: str = "llama-3.1-8b-instant"
     GROQ_MODEL_SMART: str = "llama-3.3-70b-versatile"
     OLLAMA_MODEL: str = "llama3.1:8b"
@@ -96,7 +96,7 @@ class Settings(BaseSettings):
 
     # ── Conversation limits ───────────────────────────────────
     MAX_CONVERSATION_HISTORY: int = 20
-    MAX_REPLY_TOKENS: int = 600
+    MAX_REPLY_TOKENS: int = 2000   # Gemini 2.5 uses thinking tokens that share this budget
     MAX_MESSAGES_PER_CONVERSATION: int = 100
     MAX_MESSAGE_LENGTH: int = 2000
     MAX_ACTIVE_CONVERSATIONS: int = 5000
