@@ -1,0 +1,9 @@
+# Optional: Supabase storage backend.
+# Install only if you've provisioned a Supabase project and want lead data
+# replicated to it (the service falls back to local JSON storage otherwise).
+#
+#   pip install -r requirements-supabase.txt
+#
+# Note: supabase 2.x currently pins httpx<0.28, so this is held in a
+# separate file to avoid forcing a downgrade on the main install.
+supabase>=2.10,<3.0

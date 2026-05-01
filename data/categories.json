@@ -1,0 +1,9 @@
+[
+  { "id": "gravies-curries", "name": "Gravies & Curries (RTE)", "store_link": "https://kingdom24.in/categories/indian-gravies" },
+  { "id": "frozen-momos",     "name": "Frozen Momos",            "store_link": "https://kingdom24.in/categories/momos" },
+  { "id": "breads-bakery",    "name": "Breads & Bakery",         "store_link": "https://kingdom24.in/categories/breads" },
+  { "id": "frozen-snacks",    "name": "Frozen Snacks",           "store_link": "https://kingdom24.in/categories/veg-snacks" },
+  { "id": "iqf-vegetables",   "name": "IQF Vegetables",          "store_link": "https://kingdom24.in/categories/processed-f-v" },
+  { "id": "ready-pastes",     "name": "Ready Pastes",            "store_link": "https://kingdom24.in/categories/indian-base-gravies" },
+  { "id": "ambient-range",    "name": "Ambient Range",           "store_link": "https://kingdom24.in/categories/premix" }
+]

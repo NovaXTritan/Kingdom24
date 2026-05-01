@@ -1,0 +1,17 @@
+{
+  "noida": [
+    "Noida"
+  ],
+  "ncr": [
+    "Delhi", "New Delhi", "Gurugram", "Gurgaon", "Greater Noida",
+    "Ghaziabad", "Faridabad", "Meerut"
+  ],
+  "metros": [
+    "Mumbai", "Thane", "Navi Mumbai", "Pune",
+    "Bangalore", "Bengaluru",
+    "Hyderabad", "Secunderabad",
+    "Chennai", "Kolkata", "Howrah",
+    "Ahmedabad", "Surat",
+    "Jaipur", "Lucknow"
+  ]
+}
