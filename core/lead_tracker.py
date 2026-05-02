@@ -47,6 +47,31 @@ _STORAGE = {
 _DECISION = re.compile(r"\b(owner|founder|director|chef|head chef|gm|f&b|procurement|partner)\b", re.I)
 _EMAIL = re.compile(r"[\w\.-]+@[\w\.-]+\.\w+")
 
+# Person-name extraction. Match common introduction patterns. The skip-list
+# rejects English words that happen to be capitalised at sentence start.
+_NAME_PATTERNS = [
+    re.compile(r"(?:I'm|I am|my name is|this is|mera naam|naam hai)\s+([A-Z][a-z]{1,15})", re.I),
+    re.compile(r"^([A-Z][a-z]{1,15})\s+(?:here|hai|hoon|speaking|from)\b"),
+]
+_NAME_SKIP = {
+    "I", "Im", "My", "The", "This", "Just", "Looking", "Need", "Want", "Help", "Please",
+    "Yes", "No", "Ok", "Okay", "Hi", "Hey", "Hello", "Good", "Fine", "Thanks", "Sure",
+    "We", "Us", "Our", "Ours", "Mine", "Your", "Their", "Quote", "Show", "Tell", "Send",
+}
+
+
+def extract_name(message: str) -> Optional[str]:
+    """Extract a person's first name from an introduction. Returns None if absent."""
+    for pattern in _NAME_PATTERNS:
+        m = pattern.search(message)
+        if m:
+            name = m.group(1).strip()
+            # Title-case for storage; reject if it's a common English starter word
+            if name.title() in _NAME_SKIP:
+                continue
+            return name.title()
+    return None
+
 # Top-50 Indian cities (lowercase, used for substring search)
 _CITIES = {
     "delhi", "new delhi", "noida", "gurugram", "gurgaon", "ghaziabad", "faridabad",
@@ -162,6 +187,11 @@ async def extract_and_update(conv: Conversation, message: str) -> Dict[str, str]
     if _DECISION.search(message) and not conv.lead_data.get("decision_maker"):
         conv.lead_data["decision_maker"] = "true"
         diff["decision_maker"] = "true"
+
+    if (name := extract_name(message)) and conv.lead_data.get("contact_name") != name:
+        conv.lead_data["contact_name"] = name
+        conv.customer_name = name
+        diff["contact_name"] = name
 
     # LLM extraction — only if message is substantial AND we still need outlet_name
     if len(message) > 20 and not conv.lead_data.get("outlet_name"):

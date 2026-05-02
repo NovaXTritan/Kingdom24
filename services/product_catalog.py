@@ -52,6 +52,12 @@ class Product:
 _LOCAL_FALLBACK = DATA_DIR / "products.json"
 
 
+# In-repo full catalog: the website's products.json copied in at build time.
+# This is what makes the 526-SKU catalog available on Render where the sibling
+# kingdom24-web folder doesn't exist.
+_FULL_CATALOG = DATA_DIR / "products_full.json"
+
+
 def _resolve_source() -> Path:
     if settings.PRODUCTS_JSON_PATH:
         p = Path(settings.PRODUCTS_JSON_PATH)
@@ -59,6 +65,8 @@ def _resolve_source() -> Path:
             return p
     if WEBSITE_PRODUCTS_JSON.exists():
         return WEBSITE_PRODUCTS_JSON
+    if _FULL_CATALOG.exists():
+        return _FULL_CATALOG
     return _LOCAL_FALLBACK
 
 
@@ -171,8 +179,9 @@ class _CatalogState:
                 log_event(
                     "catalog_using_seed",
                     level="WARNING",
-                    note="Falling back to 32-SKU local seed — website catalog not found at "
-                    f"{WEBSITE_PRODUCTS_JSON}",
+                    note="Falling back to 32-SKU local seed — neither website catalog "
+                    f"({WEBSITE_PRODUCTS_JSON}) nor in-repo full catalog "
+                    f"({_FULL_CATALOG}) found.",
                 )
 
     def maybe_reload(self) -> bool:
@@ -232,6 +241,14 @@ def info() -> dict:
         "last_reload_iso": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(_state.last_reload)),
         "is_seed": _state.source == _LOCAL_FALLBACK,
     }
+
+
+# Search relevance threshold — products scoring below this are dropped even if
+# they technically matched a token. Prevents the "any word match" false-positive
+# (e.g. product description containing "help" matching "I need help"). The
+# existing scorer awards 4 for name match, 2 for category/keyword/fuzzy, 1 for
+# description-only — this floor cuts pure description hits unless multiple.
+MIN_PRODUCT_SCORE = 2
 
 
 def reload_now() -> None:
@@ -336,7 +353,7 @@ def search(
         if q in name_hay:
             score_p += 5  # exact whole-query match in name
 
-        if score_p > 0:
+        if score_p >= MIN_PRODUCT_SCORE:
             scored.append((score_p, p))
 
     scored.sort(key=lambda x: x[0], reverse=True)

@@ -30,7 +30,11 @@ def test_injection_no_false_positive():
 
 # ─── Layer 2: output validation ───────────────────────────────
 def test_output_no_prompt_leak():
-    leaky = "You are the Kingdom Foods AI Sales Assistant — a sharp, friendly..."
+    # Use the actual current prompt prefix so this test tracks SYSTEM_PROMPT
+    # changes instead of hardcoding a snapshot of its opening line.
+    from prompts.system_prompt import SYSTEM_PROMPT
+
+    leaky = SYSTEM_PROMPT[:60] + "..."
     chk = guardrails.validate_response(leaky)
     assert not chk.ok
     assert chk.reason == "prompt_leak"

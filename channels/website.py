@@ -18,17 +18,13 @@ from pydantic import BaseModel, Field
 from config import settings
 from core import guardrails
 from core.conversation import store
-from core.intent_classifier import classify
+from core.intent_classifier import classify, detect_language
 from core.lead_tracker import extract_and_update, missing_fields
 from core.llm_router import Message, generate
 from core.logger import log_event
 from middleware.sanitizer import sanitize_message, safe_page_url
 from prompts.system_prompt import SYSTEM_PROMPT, build_user_context
-from prompts.templates import (
-    CONTACT_REPLY,
-    GREETING_REPLY,
-    NON_B2B_REPLY,
-)
+from prompts.templates import get_template
 from services import crm, product_catalog, razorpay_links
 
 log = logging.getLogger("k24.website")
@@ -60,7 +56,7 @@ class ChatRequest(BaseModel):
 
 
 # ─── Page-aware greetings ────────────────────────────────────────
-def _greeting_template_for(page_url: str) -> str:
+def _greeting_template_for(page_url: str, language: str = "ENGLISH") -> str:
     url = (page_url or "/").lower()
     if url.startswith("/products/"):
         return ("I see you're looking at this product. Want bulk pricing for your monthly volume, "
@@ -73,7 +69,27 @@ def _greeting_template_for(page_url: str) -> str:
     if url.startswith("/price-list"):
         return ("I can pull SKU pricing on demand. Tell me what you're sourcing and the volume — "
                 "I'll match you to the right tier.")
-    return GREETING_REPLY
+    return get_template("GREETING", language)
+
+
+_PRICE_RE = re.compile(r"₹\s*[\d,]+")
+
+
+def enforce_pricing_gate(reply: str, conv, language: str) -> str:
+    """Strip specific ₹ pricing from a reply when the customer hasn't been
+    qualified yet (no business_type known). Replaces with a qualifying ask in
+    the customer's language. Returns the original reply if pricing is allowed.
+    """
+    if conv.lead_data.get("business_type"):
+        return reply
+    if not _PRICE_RE.search(reply or ""):
+        return reply
+    log_event(
+        "pricing_gate_triggered",
+        conversation_id=conv.conversation_id,
+        language=language,
+    )
+    return get_template("PRICING_GATE", language)
 
 
 def _default_actions() -> list[dict]:
@@ -128,10 +144,11 @@ def _wrap(conv, reply: str, products=None, payment=None, actions=None) -> dict:
 
 # ─── Main handler ────────────────────────────────────────────────
 async def handle_chat_request(req: ChatRequest, channel: str = "website") -> dict:
-    # 1. Sanitise + safe page URL
+    # 1. Sanitise + safe page URL + language detection
     sanitized = sanitize_message(req.message or "")
     user_msg = sanitized.text
     page_url = safe_page_url(req.metadata.page_url)
+    language = detect_language(user_msg) if user_msg and user_msg != "__greeting__" else "ENGLISH"
 
     # 2. Load / create conversation
     conv = store.get_or_create(
@@ -213,21 +230,26 @@ async def handle_chat_request(req: ChatRequest, channel: str = "website") -> dic
         intent = await classify(user_msg)
     conv.intents_seen.append(intent)
 
-    # 9. Fast-shortcut intents
+    # 9. Fast-shortcut intents (template responses, language-aware)
+    if intent == "OFF_TOPIC":
+        return _wrap(conv, get_template("OFF_TOPIC", language), actions=[
+            {"label": "Browse bestsellers", "message": "Show me your bestsellers"},
+            {"label": "I run a business", "message": "I run a food business — let me share details"},
+        ])
     if intent == "NON_B2B":
-        return _wrap(conv, NON_B2B_REPLY, actions=[
+        return _wrap(conv, get_template("NON_B2B", language), actions=[
             {"label": "I run a business", "message": "I run a food business — let me share details"},
             {"label": "Open WhatsApp", "message": "OPEN_WHATSAPP"},
         ])
     if intent == "CONTACT":
-        return _wrap(conv, CONTACT_REPLY, actions=[
+        return _wrap(conv, get_template("CONTACT", language), actions=[
             {"label": "Open WhatsApp", "message": "OPEN_WHATSAPP"},
             {"label": "Send a quote enquiry", "message": "I want a bulk quote"},
         ])
 
     # 10. Greeting (page-aware)
     if user_msg == "__greeting__":
-        text = _greeting_template_for(page_url)
+        text = _greeting_template_for(page_url, language)
         store.save(conv)
         return _wrap(conv, text, actions=_greeting_actions(page_url))
 
@@ -264,7 +286,7 @@ async def handle_chat_request(req: ChatRequest, channel: str = "website") -> dic
             if p.id not in conv.products_discussed:
                 conv.products_discussed.append(p.id)
 
-    # 14. Compose LLM prompt
+    # 14. Compose LLM prompt (system prompt gets language injected per turn)
     history = [{"role": m.role, "content": m.content} for m in conv.recent(settings.MAX_CONVERSATION_HISTORY)]
     user_ctx = build_user_context(
         sales_stage=conv.sales_stage,
@@ -273,9 +295,11 @@ async def handle_chat_request(req: ChatRequest, channel: str = "website") -> dic
         products=products,
         intent=intent,
         history=history,
+        language=language,
     )
+    sys_prompt = SYSTEM_PROMPT.replace("{language}", language)
     result = await generate(
-        [Message(role="system", content=SYSTEM_PROMPT), Message(role="user", content=user_ctx)],
+        [Message(role="system", content=sys_prompt), Message(role="user", content=user_ctx)],
         task_type="customer_facing",
         temperature=0.55,
     )
@@ -304,6 +328,9 @@ async def handle_chat_request(req: ChatRequest, channel: str = "website") -> dic
     # 16. Outbound guardrail (price hallucination, prompt leak, forbidden promises)
     check = guardrails.validate_response(result.text)
     text = result.text if check.ok else (check.rewritten or result.text)
+
+    # 16b. Pricing gate — strip ₹ quotes if customer hasn't been qualified yet
+    text = enforce_pricing_gate(text, conv, language)
 
     # 17. Materialise [GENERATE_PAYMENT_LINK …] tokens
     text, payment = _materialise_payment(text, conv)
