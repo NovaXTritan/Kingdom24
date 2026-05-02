@@ -10,6 +10,9 @@ venv/
 .mypy_cache/
 .ruff_cache/
 storage/*.json
+storage/*.jsonl
+storage/logs/
+storage/backups/
 !storage/.gitkeep
 *.log
 .DS_Store

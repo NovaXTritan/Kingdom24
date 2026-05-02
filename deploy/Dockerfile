@@ -16,8 +16,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Non-root user for safety
-RUN useradd -ms /bin/bash app && chown -R app:app /app
+# Non-root user for safety. Pin UID:GID to 1000:1000 so bind-mounted host
+# directories (storage/) can be chown'd to match — see deploy/setup.sh.
+RUN groupadd -g 1000 app && useradd -m -u 1000 -g 1000 -s /bin/bash app \
+ && chown -R app:app /app
 USER app
 
 EXPOSE 8000
