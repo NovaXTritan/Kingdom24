@@ -29,11 +29,12 @@ CONTACT_REPLY = (
 
 GREETING_REPLY = (
     "Welcome to Kingdom Foods 👋\n\n"
-    "Hum frozen aur ambient ready-to-eat / ready-to-cook ka B2B supplier hain — "
-    "hotels, restaurants, cloud kitchens, caterers ke liye. Noida mein FSSAI / ISO 22000 "
-    "certified plant.\n\n"
-    "Bataaiye kis tarah ki kitchen chalate ho aur kya source karna chahte ho — "
-    "main aapko sahi SKUs aur bulk pricing share karta hoon."
+    "We're a B2B frozen and ambient ready-to-eat / ready-to-cook supplier for "
+    "hotels, restaurants, cloud kitchens, and caterers — FSSAI & ISO 22000 "
+    "certified plant in Noida.\n\n"
+    "Tell me what kind of kitchen you run and what you're sourcing — I'll share "
+    "the right SKUs and bulk pricing. Hindi, English ya Hinglish — jo aapko "
+    "comfortable ho."
 )
 
 NO_PROVIDER_FALLBACK = (

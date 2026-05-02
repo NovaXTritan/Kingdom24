@@ -69,8 +69,8 @@ def respond(
         text = (
             f"Tier {tier_label} pricing on the closest matches:\n\n"
             + "\n".join(lines) +
-            "\n\nSab indicative B2B + GST. Want to set up a trial order? "
-            "Bataaiye outlet name, city aur phone — main quote final kar deta hoon."
+            "\n\nAll prices indicative, B2B + GST. Want to set up a trial order? "
+            "Share your outlet name, city and phone — I'll finalise the quote."
         )
 
         # If user asked for payment AND we have all key fields, add the card
