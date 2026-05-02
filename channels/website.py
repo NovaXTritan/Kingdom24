@@ -152,7 +152,7 @@ async def handle_chat_request(req: ChatRequest, channel: str = "website") -> dic
     if store.at_message_cap(conv):
         return _wrap(
             conv,
-            "Bahut achhi baat hui! Ab aap seedha humari sales team se baat karein: 8800804580 — woh aapki exact requirement samajh ke best deal denge.",
+            "Bahut achhi baat hui! Ab aap seedha humari sales team se baat karein: 8800804580 / 15557495990 — woh aapki exact requirement samajh ke best deal denge.",
             actions=[{"label": "Open WhatsApp", "message": "OPEN_WHATSAPP"}],
         )
 
@@ -241,7 +241,7 @@ async def handle_chat_request(req: ChatRequest, channel: str = "website") -> dic
     if guardrails.is_loop(recent, settings.LOOP_DETECT_OVERLAP_THRESHOLD):
         log_event("loop_detected", conversation_id=conv.conversation_id)
         loop_msg = (
-            "Lagta hai hum same topic pe aa rahe hain. Aap ek kaam karo — seedha humari sales team se baat karo: 8800804580. "
+            "Lagta hai hum same topic pe aa rahe hain. Aap ek kaam karo — seedha humari sales team se baat karo: 8800804580 / 15557495990. "
             "Woh aapki exact requirement samajh ke best deal denge!"
         )
         conv.sales_stage = 5
@@ -331,7 +331,7 @@ def _materialise_payment(text: str, conv) -> tuple[str, Optional[dict]]:
     if amount <= 0 or amount > settings.MAX_ORDER_INR:
         cleaned = PAYMENT_TOKEN.sub("", text).strip()
         if amount > settings.MAX_ORDER_INR:
-            cleaned += "\n\nItne bade order ke liye sales team se baat karein: 8800804580"
+            cleaned += "\n\nItne bade order ke liye sales team se baat karein: 8800804580 / 15557495990"
         return cleaned, None
     name = (name_raw or conv.lead_data.get("outlet_name") or "Order").strip()[:60]
     phone = (phone_raw or conv.lead_data.get("phone") or "").strip()

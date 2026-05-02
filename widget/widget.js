@@ -168,7 +168,7 @@
     if (STATE.sending) return;
     if (!STATE.online) {
       appendBot(
-        "You're offline. Reconnect or WhatsApp +91 8800804580.",
+        "You're offline. Reconnect or WhatsApp +91 8800804580 (India) / +1 (555) 749-5990 (Intl).",
         [], null,
         [{ label: 'Open WhatsApp', message: 'OPEN_WHATSAPP' }]
       );
@@ -183,7 +183,7 @@
       return;
     }
     if (msg === 'OPEN_EMAIL') {
-      location.href = 'mailto:sales@kingdom24.in';
+      location.href = 'mailto:contact@just2eat.com';
       textEl.value = '';
       return;
     }
@@ -241,7 +241,7 @@
       typingEl.remove();
       if (err && err.isRateError) {
         appendBot(
-          err.message || "Bahut saare messages aa rahe hain. Thoda ruk kar try karo ya seedha call karo: 8800804580",
+          err.message || "Bahut saare messages aa rahe hain. Thoda ruk kar try karo ya seedha call karo: 8800804580 / 15557495990",
           [], null,
           [{ label: 'Open WhatsApp', message: 'OPEN_WHATSAPP' }]
         );
@@ -255,7 +255,7 @@
       }
       // Final failure
       appendBot(
-        "I'm offline for a moment. Please WhatsApp +91 8800804580 — our team replies within an hour during business hours.",
+        "I'm offline for a moment. Please WhatsApp +91 8800804580 (India) or +1 (555) 749-5990 (Intl), or email contact@just2eat.com — our team replies within an hour during business hours.",
         [], null,
         [
           { label: 'Open WhatsApp', message: 'OPEN_WHATSAPP' },

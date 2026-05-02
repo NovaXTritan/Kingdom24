@@ -40,7 +40,7 @@ _INJECT_RE = re.compile("|".join(_INJECT_PATTERNS), re.I)
 
 INJECTION_REPLY = (
     "Main sirf Kingdom Foods ke products ke baare mein baat kar sakta hoon. "
-    "Kuch aur help chahiye toh call karein: 8800804580"
+    "Kuch aur help chahiye toh call karein: 8800804580 / 15557495990"
 )
 
 
@@ -76,13 +76,13 @@ _ESCALATION_RE = re.compile("|".join(_ESCALATION_PATTERNS), re.I)
 
 ESCALATION_REPLY = (
     "Yeh matter humari senior team handle karegi. Main abhi unhe notify karta hoon. "
-    "Aap bhi seedha call kar sakte hain: 8800804580"
+    "Aap bhi seedha call kar sakte hain: 8800804580 / 15557495990"
 )
 THREAT_REPLY = (
-    "Aapki baat humari team tak pahunchata hoon. Please call karein: 8800804580"
+    "Aapki baat humari team tak pahunchata hoon. Please call karein: 8800804580 / 15557495990"
 )
 PERSISTENT_ABUSE_REPLY = (
-    "Main aapki madad karna chahta hoon. Kripya humari team se baat karein: 8800804580"
+    "Main aapki madad karna chahta hoon. Kripya humari team se baat karein: 8800804580 / 15557495990"
 )
 
 
@@ -125,7 +125,7 @@ _MEDICAL_RE = re.compile(
     re.I,
 )
 SAFE_PRICE_FALLBACK = (
-    "Exact pricing ke liye humara price list check karein ya call karein: 8800804580"
+    "Exact pricing ke liye humara price list check karein ya call karein: 8800804580 / 15557495990"
 )
 
 

@@ -133,7 +133,7 @@ def validate_order(
                 f"Abhi hum {city or 'is location'} mein deliver nahi karte. "
                 "Noida, Delhi NCR aur metro cities (Mumbai, Bengaluru, Chennai, "
                 "Hyderabad, Kolkata, Pune, Ahmedabad, Jaipur, Lucknow) mein available hai. "
-                "Aap apne nazdeeki city ke through manage kar sakte hain — sales se baat karein: 8800804580."
+                "Aap apne nazdeeki city ke through manage kar sakte hain — sales se baat karein: 8800804580 / 15557495990."
             ),
             subtotal=subtotal,
             has_frozen=has_frozen,
@@ -150,7 +150,7 @@ def validate_order(
             ok=False,
             reason="above_max_order",
             message=(
-                f"Itne bade order (₹{total:,}) ke liye humari team se baat karein: 8800804580. "
+                f"Itne bade order (₹{total:,}) ke liye humari team se baat karein: 8800804580 / 15557495990. "
                 "Custom contract terms aur payment options yahaan se decide hote hain."
             ),
             subtotal=subtotal,

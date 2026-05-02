@@ -77,7 +77,7 @@ async def request_envelope(request: Request, call_next):
             status_code=500,
             content={
                 "ok": False, "error": "internal_error",
-                "fallback": "Please try again. If the issue persists, WhatsApp +91 8800804580.",
+                "fallback": "Please try again. If the issue persists, WhatsApp +91 8800804580 (India) or +1 (555) 749-5990 (Intl).",
                 "request_id": rid,
             },
             headers={"X-Request-ID": rid},
@@ -245,7 +245,7 @@ def _rate_limited(decision) -> JSONResponse:
         "error": "rate_limited",
         "reason": decision.reason,
         "retry_after_seconds": decision.retry_after,
-        "message": "Bahut saare messages aa rahe hain. Thoda ruk kar try karo ya seedha call karo: 8800804580",
+        "message": "Bahut saare messages aa rahe hain. Thoda ruk kar try karo ya seedha call karo: 8800804580 / 15557495990",
     }
     return JSONResponse(
         status_code=429,

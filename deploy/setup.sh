@@ -19,7 +19,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DOMAIN="chatbot.kingdom24.in"
-EMAIL="sales@kingdom24.in"
+EMAIL="contact@just2eat.com"
 LE_LIVE="/etc/letsencrypt/live/${DOMAIN}"
 
 log()    { printf '\n\033[1;32m▶ %s\033[0m\n' "$*"; }

@@ -17,8 +17,9 @@ NON_B2B_REPLY = (
 
 CONTACT_REPLY = (
     "Kingdom Foods (Kingdom 24 Pvt Ltd) — yahan se reach kar sakte ho:\n\n"
-    "Phone / WhatsApp: +91 8800804580 (Mon–Sat, 9 AM – 7 PM IST)\n"
-    "Email: sales@kingdom24.in\n"
+    "WhatsApp / Phone (India): +91 8800804580 (Mon–Sat, 9 AM – 7 PM IST)\n"
+    "WhatsApp (International): +1 (555) 749-5990\n"
+    "Email: contact@just2eat.com\n"
     "Website: https://kingdom24.in\n\n"
     "Registered Office: D-106, Sector 63, Noida, UP 201301\n"
     "Manufacturing: A-4, Sector 68, Noida 201301\n"
@@ -37,8 +38,8 @@ GREETING_REPLY = (
 
 NO_PROVIDER_FALLBACK = (
     "Abhi humara AI assistant thoda busy hai. Aap seedha sales team se "
-    "WhatsApp / call par baat karein: +91 8800804580 (Mon–Sat 9 AM – 7 PM IST). "
-    "Ya email karein: sales@kingdom24.in"
+    "WhatsApp / call par baat karein: +91 8800804580 (India, Mon–Sat 9 AM – 7 PM IST) "
+    "ya +1 (555) 749-5990 (International). Ya email karein: contact@just2eat.com"
 )
 
 UNKNOWN_PRODUCT = (
